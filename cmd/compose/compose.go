@@ -388,13 +388,20 @@ func (o *ProjectOptions) toProjectOptions(po ...cli.ProjectOptionsFn) (*cli.Proj
 		return nil, err
 	}
 
+	// Set PWD environment variable only if unset or empty to allow user override
+	pwdEnv, exists := os.LookupEnv("PWD")
+	var envOptions []string
+	if !exists || pwdEnv == "" {
+		envOptions = append(envOptions, "PWD="+pwd)
+	}
+
 	return cli.NewProjectOptions(o.ConfigPaths,
 		append(po,
 			cli.WithWorkingDirectory(o.ProjectDir),
 			// First apply os.Environment, always win
 			cli.WithOsEnv,
 			// set PWD as this variable is not consistently supported on Windows
-			cli.WithEnv([]string{"PWD=" + pwd}),
+			cli.WithEnv(envOptions),
 			// Load PWD/.env if present and no explicit --env-file has been set
 			cli.WithEnvFiles(o.EnvFiles...),
 			// read dot env file to populate project environment
